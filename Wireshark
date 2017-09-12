@@ -1,0 +1,17 @@
+The Windows Loopback .... Where is it now ?
+
+  Oddly Wireshark does not allow for a person to sniff loopback interfaces... 
+  If you have installed wireshark on a more modern system, you may not be able to see these interfaces
+
+  to accomplish this - you simply need to just use 
+
+  npcap from nmap - or simply click the link below:
+
+  https://nmap.org/npcap/
+
+  After downloading, you can now install this package with admin rights
+  and remove the winpcap driver loaded on the system!!! Horray!!
+
+  Now you simlply can see these previously restricted interfaces
+
+  happy hacking 
