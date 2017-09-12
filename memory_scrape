@@ -1,0 +1,6 @@
+during an assessment i needed to find some SQL functions and other tidbits of information from a raw memory dump
+
+using the common keys to look for my artifacts, it was difficult to actually capture the required information
+i found this great search query which gave me the needed information
+
+grep -B25 -E "^\-\-\-\-\-"
