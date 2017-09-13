@@ -1,0 +1,22 @@
+taking a access approach with enough permissions on the system some commands to run to profile the services and operations
+
+wmic qfe get description,installedOn
+sc query type= service state= all
+wmic startup list full (local use)
+  wmic /node:aremotemachinehere startup list full (remote usage)
+  wmic STARTUP GET Caption, Command, User (local useage, parsed)
+  
+  
+wmic process list full
+  wmic /record:processes.xml process list full (record output to processes.xml)
+  wmic /output:wmic.html process list full /format:hform ( output to html )
+
+netstat -nab 3 >> netstat.txt ( netstat every 3 seonds and append output to netstat.txt)
+
+wmic useraccount list full
+
+wmic ntevent list full
+
+wmic service list full
+
+
