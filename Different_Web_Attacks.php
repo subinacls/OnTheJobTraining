@@ -214,8 +214,8 @@ alert('Using the JS function from the AUTH page\nShowing precomputed SHA1 hash o
 </script>
 -->
 <script type="text/javascript">
- document.setadminpass.password.value = sha1('188774732Secur1ty#');
- document.setadminpass.confirmPassword.value = sha1('188774732Secur1ty#');
+ document.setadminpass.password.value = sha1('188774732mynewpass');
+ document.setadminpass.confirmPassword.value = sha1('188774732mynewpass');
 </script>
 
 <script>
