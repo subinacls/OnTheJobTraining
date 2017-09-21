@@ -1,6 +1,67 @@
-during an assessment i needed to find some SQL functions and other tidbits of information from a raw memory dump
 
 using the common keys to look for my artifacts, it was difficult to actually capture the required information
 i found this great search query which gave me the needed information
 
 grep -B25 -E "^\-\-\-\-\-"
+
+
+another interesting thing with memory  dumps is the ability to identify strings produced by users or the application its self
+
+in this example we will look for a base64 string, which will look for the start of a base64 encoded file that 
+contains a very specific start string, which is in this case is '-----BEGI', the base64 output is slightly different
+as we only used the static bits of the output as the grep query.
+
+
+baseScraper() {
+ tfile1=`mktemp`; \
+ tfile2=`mktemp`; \
+ tfile3=`mktemp`; \
+ results=`strings $1 | \
+   grep "LS0tLS1CRUdJ" | \
+   base64 -d`;
+ echo -e "[!] Extracting data ...\n\n ..... [-] Private Key\n"; 
+ echo $results | \
+   sed -r "s/(.*)----- -----(.*)/-----\2/g" | \
+   sed -r "s/-----BEGIN RSA PRIVATE KEY-----/_____/g" | \
+   sed -r "s/-----END RSA PRIVATE KEY-----/\^\^\^\^\^/g" | \
+   tr -s " " "\n" | \
+   sed -r "s/_____/-----BEGIN RSA PRIVATE KEY-----/g" | \
+   sed -r "s/\^\^\^\^\^/-----END RSA PRIVATE KEY-----/g" | \
+   tee $tfile1;
+ echo -e "\n ..... [-] Public Key\n"; 
+ echo $results | \
+   sed -r "s/(.*)----- -----(.*)/\1-----/g" | \
+   sed -r "s/-----BEGIN PUBLIC KEY-----/_____/g" | \
+   sed -r "s/-----END PUBLIC KEY-----/\^\^\^\^\^/g" | \
+   tr -s " " "\n" | \
+   sed -r "s/_____/-----BEGIN PUBLIC KEY-----/g" | \
+   sed -r "s/\^\^\^\^\^/-----END PUBLIC KEY-----/g" | \
+   tee $tfile2;
+ diffPubKey() { 
+   openssl rsa -in $1 -pubout 2>/dev/null | \
+     tee $tfile3;
+   echo -e "\n ..... [-] Comparing Public Keys:\n"; 
+   diff -s $tfile2 $tfile3;
+ }; 
+ echo -e "\n ..... [-] Generating Public Key\n"; 
+ diffPubKey RSA_KEY;
+ echo; 
+ rm $tfile1 $tfile2 $tfile3;
+} ## baseScraper ./MEM_DUMP_FILE.HERE
+
+After you have gives the suer argument pointing to the memory dump file, you will see some output to STDOUT
+this information is only to display the information to the user for manual verification. 
+Further logic will be applied to generate a new public key from the known RSA key
+Afterwhich the function will compare the new and original public key and le the end user know if they are a match or not
+
+if you see the following output:
+
+  Function Output:
+    Files <OrginalKey> and <NewKeyTemp> are identical  ===>  GOOD FINDING (the files ARE the same)
+    Files <OrginalKey> and <NewKeyTemp> differ         ===>  BAD  FINDING (the files are NOT the same) 
+
+It should be mentioned this does NOT save any files to disk. End user can copy and paste STDOUT information as they wish
+or better yet, pipe the output to a evidence file like so: 
+
+        baseScrape ./MyMEMdump > RSA_FROM_MEM.evidence
+
