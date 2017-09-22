@@ -6,11 +6,18 @@ grep -B25 -E "^\-\-\-\-\-"
 
 
 another interesting thing with memory  dumps is the ability to identify strings produced by users or the application its self
+that are placed in memory segments for later use. Bad programmers leave these segments populated with a treasure trove of 
+information just waiting to be identified ... A common mistake with handling sensitive information is the misunderstanding
+of encryption vs encoding. Most of us understand the differences, or just left over development code/functions/routines
+are left in production. I wont go into details with who these vendors are, but in a good measure, this script helps
+identify such actions of developers and bad coding practices... So lets get started!
 
-in this example we will look for a base64 string, which will look for the start of a base64 encoded file that 
-contains a very specific start string, which is in this case is '-----BEGI', the base64 output is slightly different
-as we only used the static bits of the output as the grep query.
+In this case study we will look for a very specific tell tale base64 encoded string, which will look for the start of an
+SSL Certificate. This string contains a very specific string of characters, which is in this case is '----- BEGI'.
+The query string is slightly different from the expected Base64 output, as we only used the static bits for the grep query.
 
+Below is a function which simplifies the process of identifying and validating the RSA Private Key and Public Key found in 
+the applications memory dumps file. I have attempted to keep the function as simle as can be for easy of following.
 
 baseScraper() {
  tfile1=`mktemp`; \
@@ -19,7 +26,8 @@ baseScraper() {
  results=`strings $1 | \
    grep "LS0tLS1CRUdJ" | \
    base64 -d`;
- echo -e "[!] Extracting data ...\n\n ..... [-] Private Key\n"; 
+ echo -e "[!] Extracting data ...\n";
+ echo -e "\n ..... [-] Private Key\n"; 
  echo $results | \
    sed -r "s/(.*)----- -----(.*)/-----\2/g" | \
    sed -r "s/-----BEGIN RSA PRIVATE KEY-----/_____/g" | \
@@ -40,11 +48,11 @@ baseScraper() {
  diffPubKey() { 
    openssl rsa -in $1 -pubout 2>/dev/null | \
      tee $tfile3;
-   echo -e "\n ..... [-] Comparing Public Keys:\n"; 
+   echo -e "\n ..... [-] Compare Original and New Public Keys:\n"; 
    diff -s $tfile2 $tfile3;
  }; 
- echo -e "\n ..... [-] Generating Public Key\n"; 
- diffPubKey RSA_KEY;
+ echo -e "\n ..... [-] Generating New Public Key\n"; 
+ diffPubKey $tfile1;
  echo; 
  rm $tfile1 $tfile2 $tfile3;
 } ## baseScraper ./MEM_DUMP_FILE.HERE
@@ -63,5 +71,5 @@ if you see the following output:
 It should be mentioned this does NOT save any files to disk. End user can copy and paste STDOUT information as they wish
 or better yet, pipe the output to a evidence file like so: 
 
-        baseScrape ./MyMEMdump > RSA_FROM_MEM.evidence
+        baseScraper ./MyMEMdump > RSA_FROM_MEM.evidence
 
