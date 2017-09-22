@@ -35,18 +35,10 @@ You will be presented some output to help idenitfy if the DEBUG is enabled on th
     [PERMITTED ACCESS]	Vulnerable to ASP.NET Remote Debugging
     [FORBIDDEN ACCESS]	MAYBE Vulnerable to ASP.NET Remote Debugging
 
-Want to scan a list of systems, ok ...
-
-
-Let's say there needs to be more proof of the weakness and you have found credentials for this system...
-
-you can perform an NTLM Authetnication with (curl|wget), but we will use culr here..
+Let's say there needs to be more proof of the weakness and you have found credentials for this system and an application path
+you can perform an NTLM Authetnication with (curl|wget), but we will use curl here..
 
 curl -H $'Command: start-debug' \
   -k -v --ntlm \
-  -u "SOME_SERVER\\Administrator:PLAINTEXTHERE" \
+  -u "SOME_SERVER\\Administrator:PLAINTEXTPWDHERE" \
   "http://<TARGET>/<DIR>/<EXISTING_FILE>"
-
-
-
-curl -H $'Command: start-debug' -k -v --ntlm -u "ONGUARD-SERVER\\Administrator:testuser1!" "http://172.16.159.133/AdminApp/Default.aspx" && echo
