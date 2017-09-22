@@ -1,0 +1,18 @@
+Examining WMI processes I stumbled into an article from Microsoft on WMI and powershell.
+They oddly enough include how to run and hide a programs execution from end users view through WMI and powershell
+
+Lets examine the process ...
+
+$startup=[wmiclass]"Win32_ProcessStartup"
+$startup.Properties['ShowWindow'].value=$False
+([wmiclass]"win32_Process").create('notepad.exe','C:\',$Startup)
+
+sets variable $startup to a Win32_ProcessStartup call
+sets argument to the Process call with ['ShowWindow'].value set to False
+creates the WMI Win32_Process "create" with the arguments 
+  application to execute
+  Path to the executable
+  the WIn32 API function to use
+  
+and thats it ... copy and save as start_inv_process.ps1 and your good to go -
+make the ps1 take an user argument to make it more functional
