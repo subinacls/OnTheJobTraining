@@ -1,0 +1,34 @@
+getheaders(){
+ doWget() {
+  # used as an initial download of the Target site
+  tfile=`mktemp`;
+  wget \
+    --server-response \
+    --no-check-certificate \
+    --spider \
+    $1 \
+    -o $tfile; 
+ } # doWget http://129.168.1.1
+ doWget $1
+ getEtag() { 
+   cat $tfile | \
+     grep -Ei "((E(-| |)Tag):(.*))"; 
+ } # getEtag INFILE
+ getEtag $tfile
+ getServer() { 
+   cat $tfile | \
+     grep -Ei "(Server( |):(.*))"; 
+ } # getServer INFILE
+ getServer $tfile
+ getXpower() { 
+   cat $tfile | \
+     grep -Ei "((X( |-|)Powered( |-|)By( |)):(.*))"; 
+ } # getXpower INFILE
+ getXpower $tfile
+ getXpower() { 
+   cat $tfile | \
+     grep -Ei "((X( |-|)Powered( |-|)By( |)):(.*))"; 
+ } # getXpower INFILE
+ getXpower $tfile
+} ## getheaders http://192.168.1.1
+getheaders http://172.16.159.133
