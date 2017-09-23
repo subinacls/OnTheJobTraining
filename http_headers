@@ -12,23 +12,34 @@ getheaders(){
  doWget $1
  getEtag() { 
    cat $tfile | \
-     grep -Ei "((E(-| |)Tag):(.*))"; 
+     grep -Ei "((E(-| |)Tag):(.*))" | \
+     sort -u;  
  } # getEtag INFILE
  getEtag $tfile
  getServer() { 
    cat $tfile | \
-     grep -Ei "(Server( |):(.*))"; 
+     grep -Ei "(Server( |):(.*))" | \
+     sort -u;  
  } # getServer INFILE
  getServer $tfile
  getXpower() { 
    cat $tfile | \
-     grep -Ei "((X( |-|)Powered( |-|)By( |)):(.*))"; 
+     grep -Ei "((X( |-|)(Powered|aspnet)( |-|)(By|Version)( |)):(.*))" | \
+     sort -u; 
  } # getXpower INFILE
  getXpower $tfile
- getXpower() { 
+ getCookie() { 
    cat $tfile | \
-     grep -Ei "((X( |-|)Powered( |-|)By( |)):(.*))"; 
- } # getXpower INFILE
- getXpower $tfile
+     grep -Ei "(((Set-|)Cookie:)(.*))" | \
+     sort -u; 
+ } # getCookie INFILE
+ getCookie $tfile
+ getWarning() { 
+   cat $tfile | \
+     grep -Ei "(WARNING)" | \
+     sort -u; 
+ } # getWarning INFILE
+ getWarning $tfile
 } ## getheaders http://192.168.1.1
+
 getheaders http://172.16.159.133
