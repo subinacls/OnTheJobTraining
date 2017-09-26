@@ -1,0 +1,12 @@
+# makes a directory if it does not exist for the evidence dump in Ccurrent working director
+# Runs strings on folder contents. Can be any file, binary or otherwise.
+# makes an evidence file per scanned file in the ./strings folder
+stringtheory() { 
+ if [ ! -d strings ]; then
+  mkdir strings
+ fi
+ for x in $(ls); do 
+  strings $x > ./strings/`echo $x`.strings
+ done;
+} ## cd ~/memory_dumps; stringtheory
+
