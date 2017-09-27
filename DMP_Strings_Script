@@ -1,0 +1,130 @@
+!/bin/env bash
+# Helps with large string query over DMP files from applications (memory dumps).
+# Written by: William SubINaclS Coppola 2013
+#
+wdi=`pwd` # get working directory
+evi="$wdi/evidence" # make evidence directory from working directory
+str="$wdi/strings" # make strings directory from working directory
+dmp="$wdi/dumps" # make dumps directory from working directory
+# make evidence directory if not already existent
+if [ ! -d $evi ]; then 
+ mkdir $evi
+fi
+# make strings directory if not already existent
+if [ ! -d $str ]; then 
+ mkdir $str
+fi
+# make dumps directory if not already existent
+if [ ! -d $dmp ]; then 
+ mkdir $dmp
+fi
+# check for files in ./strings directory, ensure they exist - if not make it so
+# strings used in common connections and queries to DB
+if [ ! -f "$str/db_strings" ]; then 
+ echo -e "SA\nDB\nDBO\nSELECT\nINSERT\nCREATE\nTABLE\nFROM\nWHERE\nUPDATE\nORDER BY\n" > $str/db_strings
+fi
+# common known strings for DB connections
+if [ ! -f "$str/connection_strings" ]; then
+ echo "data" > $str/connection_strings
+fi
+# common found strings used for connections or queries on mainframes
+if [ ! -f "$str/mainframe_strings" ]; then 
+ echo "accept" > $str/mainframe_strings
+fi
+# common and or known password strings inside applications
+if [ ! -f "$str/password_strings" ]; then 
+ echo "password" > $str/password_strings
+fi
+# common known locations for registry keys
+if [ ! -f "$str/registry_strings" ]; then 
+ echo "HKLM" > $str/registry_strings
+fi
+# sourcecode strings commonly found in binaries
+if [ ! -f "$str/sourcecode_strings" ]; then 
+ echo "read" > $str/sourcecode_strings
+fi
+# known names used to identify temp files
+if [ ! -f "$str/tempfiles_strings" ]; then 
+ echo "temp" > $str/tempfiles_strings
+fi
+# url identifiers for http(s) services
+if [ ! -f "$str/url_strings" ]; then
+ echo "(http(s|):\/\/(.*)\.(.*){2,3})" > $str/url_strings
+fi
+# dated deprecated and or older versions of modules
+if [ ! -f "$str/old_modules_strings" ]; then
+ echo "please\suse(.*)instead" > $str/old_modules_strings
+fi
+# the processing function which does all the grepping and evidence gathering for the bash script
+takingadump()
+{
+	# make a temporary file name for storing and moving sorted unique list		
+	tmpfilename=`mktemp`
+	# make a listing of all strings files in ./strings/ directory for looping
+	for listx in $(ls $str); do 
+	 echo $str/$listx >> $str/string_listing
+	 cat $str/string_listing | grep -v string_listing | sort -u > $tmpfilename && mv $tmpfilename $str/string_listing
+	done
+	# make a listing of all DMP files in ./dumps/ directory for looping
+	for listx in $(ls $dmp); do
+	 echo $dmp/$listx >> $dmp/dump_listing
+	 cat $dmp/dump_listing | grep -v dump_listing | sort -u > $tmpfilename && mv $tmpfilename $dmp/dump_listing
+	done
+	# start iterating over the newly created list
+	iteratelist
+}
+# work over the list of dmp files and string files producing output
+iteratelist()
+{
+	clear
+	echo -e "\n"
+	tmpfilename=`mktemp`
+	for x in $(cat $dmp/dump_listing); do
+	 echo -e "\t[!] Processing RAW strings file: $x"
+	 if [ ! -d $evi/`echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g" | cut -d "." -f1` ]; then
+	  edir=$evi/`echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g" | cut -d "." -f1`
+	  mkdir $edir
+	 fi
+	 strings $x > $edir/`echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g"`-RAW.strings
+	 echo -e "\n\t\t[*] Finished processing RAW string file"
+	 echo -e "\n\t[!] $edir/`echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g"`-RAW.strings is being evaluated\n"
+	 for y in $(cat $str/string_listing); do 
+	  echo -e "\t\t[*] Using $y list - line count: `wc -l $y | cut -d " " -f1`\n"
+	  for z in $(cat $y); do
+	   echo -e "\t\t\t[-] Grepping for: $z - Output:  `echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g"`-$z.strings"
+	   cat $edir/`echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g"`-RAW.strings | grep -i -E "$z" > $edir/`echo $x | sed -r "s/(.*)\/((.*)\.(.*))/\2/g"`-$z.strings
+	  done
+	  echo -e "\n"
+	 cat $dmp/dump_listing | grep -v $x | sort -u > $tmpfilename && mv $tmpfilename $dmp/dump_listing
+	 done
+	done
+}
+# wait for user input to proceed with the rest of the script
+waiting4user()
+{
+	echo -e "\n\t[-] Please place all the DMP files into the ./dump directory before continuing"
+	echo -e "\t[-] Have you placed the DMP files to directory:\n\n\t\t$dmp/\n"
+	echo -e '\t\t[!] Please enter "Yes" or "No"\n\n'
+	read ready
+	if [ $ready == "y" ]; then 
+	 echo -e "\n\n\t\t[*] Starting strings on DMP files\n\n"
+	 takingadump
+	elif [ $ready == "yes" ]; then 
+	 echo -e "\n\n\t\t[*] Starting strings on DMP files\n\n"
+	 takingadump
+	elif [ $ready == "Y" ]; then 
+	 echo -e "\n\n\t\t[*] Starting strings on DMP files\n\n"
+	 takingadump
+	elif [ $ready == "Yes" ]; then 
+	 echo -e "\n\n\t\t[*] Starting strings on DMP files\n\n"
+	 takingadump
+	elif [ $ready == "YES" ]; then 
+	 echo -e "\n\n\t\t[*] Starting strings on DMP files\n\n"
+	 takingadump
+	else
+	 # waiting longer for user to push their DMP files to the dump directory
+	 waiting4user
+	fi
+}
+# call function waiting4user to start the processing
+waiting4user
