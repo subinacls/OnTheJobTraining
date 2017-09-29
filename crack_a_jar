@@ -1,0 +1,39 @@
+#
+# When you have a load of jar files and you want to peak at them ...
+# Manually opening the files is a pain and a mess if your not critical with you process
+# Opens the JAR files and brings them into their own respective directories
+# Drops into the directories and performs tasks on the classes
+# Saves all output to evidence folder, all files stored in exploded folder
+#
+explodingJar() {
+ openLid() {
+  foldername=$(echo $1| cut -d "/" -f2 | cut -d "." -f1);
+  if [ ! -d "exploded" ]; then
+   mkdir exploded;
+  fi;
+  if [ ! -d $foldername ]; then
+   mkdir foldername;
+  fi;
+  unzip $1 -d ./exploded/$foldername/
+  gotoClass
+ } ## openLid ./myapplet.jar
+ # finds all clas files from the project directory
+ # outputs to project folder under project name_class_list
+ gotoClass(){
+  expdir=`pwd`
+  cd $expdir/exploded/$foldername
+  find ./* -type f | grep class > `echo $foldername`_class_list
+  decomClass
+ } ## gotoclass
+ # decompile class and stow in evidence
+ decomClass() {
+  if [ ! -d "decompiled" ]; then
+   mkdir decompiled
+  fi
+  for xclass in $(cat `echo $foldername`_class_list); do
+   dcomname=`echo $xclass| tr -s "/" "_"| sed -r "s/^(._|)(.*)\.class/\.\/decompiled\/\2.decompile/g"`
+   javap -sysinfo -c -p $xclass > $dcomname
+  done
+ }
+ openLid $1
+}
