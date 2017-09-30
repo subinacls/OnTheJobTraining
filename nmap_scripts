@@ -1,5 +1,37 @@
-  # get information (Authenticated) RPC service
-  nmap -vvv -n -p 139 \
-    --script=msrpc-enum \
-    --script-args=smbpassword=<PASSWORD>,smbusername=<USERNAME> \
-    <IPADDRESS>
+# get information (Authenticated) RPC service
+nmap -vvv -n -p 139 \
+  --script=msrpc-enum \
+  --script-args=smbpassword=<PASSWORD>,smbusername=<USERNAME> \
+  <IPADDRESS>
+
+# get SMB security configuration information (Un-Authenticated)
+nmap -vvv -n -p 445 \
+  --script=smb-security-mode 
+  <IPADDRESS>
+
+# get SMB Shared folders (Un-Authenticated)
+nmap -vvv -n -p 445 \
+  --script=smb-enum-shares \
+  <IPADDRESS>
+
+# get SMB Shared folders (Authenticated)
+nmap -vvv -n -p 445  \
+  --script=smb-enum-shares \
+  --script-args=smbusername=<USERNAME>,smbpassword=<PASSWORD> \
+  <IPADDRESS>
+
+# bruteforce SMB and enumerate shares (Attempted Authentication)
+nmap -vvvv -n -p 445 \
+  --script=smb-brute.nse,smb-enum-shares \
+  --script-args=userdb=<USERNAME_LIST>,passdb=<PASSWORD_LIST> \
+  <IPADDRESS>
+
+# enumerate SMB Session ID's
+nmap -p 445 -v -d \
+  --script=smb-enum-sessions \
+  --script-args=smbusername=<USERNAME>,smbpassword=<PASSWORD> \
+  <IPADDRESS>
+
+
+
+
