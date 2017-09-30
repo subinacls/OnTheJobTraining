@@ -13,7 +13,7 @@ querymodule() {
 }
 getNodepackages
 bulkprocess() {
- for xmodule in $(echo $rawprojects | tr -s " " "\n"); do
+ for xmodule in $(echo $rawprojects| sed -r "s/\, \./\,\n\./g" | tr -d " "); do
   echo $xmodule
   modver=`echo $xmodule | cut -d ':' -f3 | cut -d "@" -f2 | cut -d'"' -f1`
   modname=`echo $xmodule | cut -d ':' -f3 | cut -d "@" -f1 | cut -d'"' -f2`
@@ -26,18 +26,28 @@ bulkprocess() {
    download=`echo $checkmodule | sed -r "s/></>\n</g" | grep -A5 module-name | grep href | cut -d '"' -f2 | tr -s " " "\n" | sort -u`
    effectedmod=`echo $checkmodule | sed -r "s/></>\n</g" | grep -A5 module-name | grep href | cut -d '>' -f2 | cut -d"<" -f1 | tr -s " " "\n" | sort -u`
    versort=`echo -e "$modver\n$version\n$patched" | sort -V`
-   # sanitycheck()
+   # sanitycheck
    patchline=`echo -e $(echo $versort) | tr -s " " "\n" | grep -n $(echo $patched) 2>/dev/null | cut -d":" -f1`
    modline=`echo -e $(echo $versort) | tr -s " " "\n" | grep -n $(echo $modver) 2>/dev/null | cut -d":" -f1`
    verline=`echo -e $(echo $versort) | tr -s " " "\n" | grep -n $(echo $version) 2>/dev/null | cut -d":" -f1`
    if [ "$patchline" != "" ]; then
-    if [ "$modver" != "3" ]; then
+    if [ "$verline" != "3" ]; then
      echo -e "\\------------------------------------\\"
-     echo -e "\t[-] Impacted module: $effectedmod"
-     echo -e "\t\t[!] Advisory date: $advisorydate"
-     echo -e "\t\t[!] Current Version $modver"
-     echo -e "\t\t[!] Patched version: $patched"
-     echo -e "\t\t[!] Download URL: $download"
+     if [ "$effectedmod" != "" ]; then
+      echo -e "\t[-] Impacted module: $effectedmod"
+     fi
+     if [ "$advisorydate" != "" ]; then
+      echo -e "\t\t[!] Advisory date: $advisorydate"
+     fi
+     if [ "$modver" != "" ]; then
+      echo -e "\t\t[!] Current Version $modver"
+     fi
+     if [ "$patched" != "" ]; then
+      echo -e "\t\t[!] Patched version: $patched"
+     fi
+     if [ "$download" != "" ]; then
+      echo -e "\t\t[!] Download URL: $download"
+     fi
      echo -e "\\------------------------------------\\"
     fi
    fi
