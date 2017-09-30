@@ -1,0 +1,5 @@
+  # get information (Authenticated) RPC service
+  nmap -vvv -n -p 139 \
+    --script=msrpc-enum \
+    --script-args=smbpassword=<PASSWORD>,smbusername=<USERNAME> \
+    <IPADDRESS>
