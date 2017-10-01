@@ -1,0 +1,35 @@
+# every want to know if that unknown port answers DCERPC ?
+# sometimes nmap does not notify this properly however if the service replays to specific request
+# it will reply with a known signature which is "...............@"
+# well here we go
+findDCERPC() {
+ # var 'a' is the payload after the handshake is sent. 
+ # we only care for the reply which solicited from this payload
+ # some processing to get the signature form the reply
+ # dumps into hexdump
+ # saves the first line only
+ # cuts out the bytes from ASCII
+ # and validate through regex it is the true signature we want
+ a=`echo -e "\x00\x00\x00\xa4\xff\x53\x4d\x42\x72\x00\x00\x00\x00\x08\x01\x40" \
+   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x40\x06" \
+   "\x00\x00\x01\x00\x00\x81\x00\x02\x50\x43\x20\x4e\x45\x54\x57\x4f" \
+   "\x52\x4b\x20\x50\x52\x4f\x47\x52\x41\x4d\x20\x31\x2e\x30\x00\x02" \
+   "\x4d\x49\x43\x52\x4f\x53\x4f\x46\x54\x20\x4e\x45\x54\x57\x4f\x52" \
+   "\x4b\x53\x20\x31\x2e\x30\x33\x00\x02\x4d\x49\x43\x52\x4f\x53\x4f" \
+   "\x46\x54\x20\x4e\x45\x54\x57\x4f\x52\x4b\x53\x20\x33\x2e\x30\x00" \
+   "\x02\x4c\x41\x4e\x4d\x41\x4e\x31\x2e\x30\x00\x02\x4c\x4d\x31\x2e" \
+   "\x32\x58\x30\x30\x32\x00\x02\x53\x61\x6d\x62\x61\x00\x02\x4e\x54" \
+   "\x20\x4c\x41\x4e\x4d\x41\x4e\x20\x31\x2e\x30\x00\x02\x4e\x54\x20" \
+   "\x4c\x4d\x20\x30\x2e\x31\x32\x00" | \
+   nc -w3 -v $1 $2 2>/dev/null | \
+   hexdump -C | \
+   head -n1 | \
+   cut -d"|" -f2 | \
+   sed -r "s/([.]{15}\@)/\1/g"`;
+ # simple if statement, validating the 'a' var
+ # if there is a true condition, report information to STDOUT
+ # does not report FALSE conditionals
+ if [ "$a" == "...............@" ]; then 
+  echo -e "System: $1:$port is DCE/RPE";
+ fi;
+}
