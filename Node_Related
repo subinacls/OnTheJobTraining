@@ -1,0 +1,24 @@
+# sometimes node.js files are a nest of crap, I am not to fond of such things.
+# sometimes the files are intentionally obfuscated with base64 and an eval string
+# might not be a wise idea in the context of security 
+# want to have a clean display of the JS code ?
+# use this function to pretty print the code to STDOUT or pipe to a file ...
+
+prettyNode() {
+ cat $1 | sed -r "s/\\\n/\^\^\^\^\^/g" | sed -r "s/\^\^\^\^\^/\n/g"; 
+} ## prettyNode somenode.js
+
+# more advanced use case:
+# if the output has some base64 eval statement 
+# you can reflect these eval statements and print pretty to STDOUT
+showNodebase64() {
+ prettyNode $1 | \
+  grep base64 | \
+  tr -s ";" "\n" | \
+  grep base64 | \
+  cut -d '"' -f1 | \
+  cut -d "," -f2 | \
+  base64 -d | 
+  prettyNode
+} ## showNodebase64 somenode_withbase64eval.js
+
