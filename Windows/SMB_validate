@@ -1,0 +1,13 @@
+# validate smb services are open
+checkSMB() { 
+ a=`echo -e "\x81\x00\x44\x20\x "| \
+  nc $1 $2 | \
+  hexdump -C | \
+  tr -s " " | \
+  head -n1 | \
+  sed -r "s/[0-9]{8} (.*) \|(.*)/\1/g"| \
+  tr -d " "`; 
+ if [ "$a" == "830000018f" ]; then 
+  echo -e "System: $1:$2 is SMB"; 
+ fi;
+} ## checkSMB <IPADDRESS> <PORT>
