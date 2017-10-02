@@ -6,23 +6,66 @@
 #   Run as a privledged user: 'netstat -anbp tcp'
 # Step two, copy the commands output and save to your local Linux filesystem
 # Run the ValidateWinNetstat function as shown
-## ValidateWinNetstat <your_netstat_output.file>
+## ValidateWinNetstat 1.2.3.4 netstat_output.file > 1.2.3.4_Firewall_ON
+## ValidateWinNetstat 1.2.3.4 netstat_output.file > 1.2.3.4_Firewall_OFF
 #
 ValidateWinNetstat() {
+ ip=$1
+ netstatfile=$2
  timestamp=`date | tr -s " " | cut -d " " -f2,4 | tr -s " " "_" | tr -s ":" "-"`
- nmapports=`cat $2 | \
-   grep -i listen | \
-   tr -s " " | \
-   cut -d" " -f3 | \
-   cut -d ":" -f2 | \
-   sort -nu | \
-   tr -s "\n" "," | \
-   sed -r s"/(.*)\,$/\1/g"`;
- nmap -sCV -vvv -n -p \
-   `echo $nmapports` \
-   $1 | \
-   tee $1_nmap_ConVer_Whitebox_$timestamp.scan
+ makeServiceList() { 
+   echo -e "\n[-] Producing Windows Service file ...\n"
+   serlist="`echo $ip`_`echo $timestamp`_service.list"
+   cat $netstatfile | \
+     tr -d "\n" | \
+     sed -r "s/TCP/\nTCP/g" | \
+     grep -i listening | \
+     tr -s " " | \
+     sed -r s"/Can not obtain ownership information/\[?????\]/g" | \
+     sed -r "s/LISTENING (.*) \[svchost.exe\]/LISTENING \[\1\ - [svchost.exe\]\]/g" | \
+     tee $serlist;
+   echo -e "\n[-] Service file saved: $serlist ...\n" 
+ }
+ makeServiceList
+ doNmapConVerScan() {
+   echo -e "\n[-] Staring Nmap Connect Version Scan ...\n"
+   nmapout=`echo $ip`_`echo $timestamp`_nmap.out
+   nmapports=`cat $netstatfile | \
+     grep -i listen | \
+     tr -s " " | \
+     cut -d" " -f3 | \
+     cut -d ":" -f2 | \
+     sort -nu | \
+     tr -s "\n" "," | \
+     sed -r s"/(.*)\,$/\1/g"`;
+   nmap -sCV -vvv -n -p \
+     $nmapports \
+     $ip | \
+     tee $nmapout;
+   echo -e "\n[-] Nmap finished, output file saved: $nmapout ...\n" 
+ }
+ doNmapConVerScan
+ mapWinServices() {
+   echo -e "\n[-] Producing the Service Mapping file ...\n" 
+   winser=`echo $ip`_`echo $timestamp`_service.map
+   for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
+     nmapentry=`cat $nmapout | \
+       grep $x | \
+       grep -Ei "  open  " | \
+       tr -s " " | sed -r "s/((.*) [0-9]{1,3} (.*)$)/\3/g"`;
+     for xser in $(cat $serlist | grep "\:$x 0\.0\.0\.0" | tr -s " " "^"); do
+       rawentry=`echo "$xser- $nmapentry"`
+       mapentry=`echo $rawentry | sed -r "s/(.*)\]\^\-\^(.*)/\1\^-\^\2\]/g"`
+       echo -e "$mapentry" | sed -r "s/\?\?\?\?\?/Unknown Process/g" | tr -s '^' ' '
+     done;
+   done | \
+   sort -n -t : -k 2 | \
+     tee $winser;
+   echo -e "\n[-] Service Mapping File saved: $winser ...\n" 
+ }
+ mapWinServices
 } ## ValidateWinNetstat ./somenetstatoutput.file
+
 # After the command has completed you should have a file which exist in the current working directory of the user
 # prior to launching. This file will now contain any services which nmap was able to solicite and make a full handshark
 # grabbed banners and attempted to identify unknow services. This can be used to validate the Operating Systems firewalls.
@@ -31,17 +74,3 @@ ValidateWinNetstat() {
 #  Session 2: Firewall condition DOWN
 # After you have captured scans from both conditions you can now validate which ports are open and which are not.
 # Or just use the following function to do the diff and parse the results.
-
-
-
-# Make a service to port number list for later validation
-makeServiceList() { 
-  cat $1 | \
-  tr -d "\n" | \
-  sed -r "s/TCP/\nTCP/g" | \
-  grep -i listening | \
-  tr -s " " | \
-  sed -r s"/Can not obtain ownership information/\[Unknown Process\]/g" | \
-  sed -r "s/LISTENING (.*) \[svchost.exe\]/LISTENING \[\1\ - [svchost.exe\]\]/g" | \
-  tee $1_service_list;
-}
