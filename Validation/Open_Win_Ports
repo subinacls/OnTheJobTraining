@@ -51,12 +51,12 @@ ValidateWinNetstat() {
    for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
      nmapentry=`cat $nmapout | \
        grep $x | \
-       grep -Ei "  open  " | \
+       grep -Ei "[0-9]\/tcp( ){1,8}open( ){1,8}" | \
        tr -s " " | sed -r "s/((.*) [0-9]{1,3} (.*)$)/\3/g"`;
-     for xser in $(cat $serlist | grep "\:$x 0\.0\.0\.0" | tr -s " " "^"); do
+     for xser in $(cat $serlist | grep "\:$x " | tr -s " " "^"); do
        rawentry=`echo "$xser- $nmapentry"`
        mapentry=`echo $rawentry | sed -r "s/(.*)\]\^\-\^(.*)/\1\^-\^\2\]/g"`
-       echo -e "$mapentry" | sed -r "s/\?\?\?\?\?/Unknown Process/g" | tr -s '^' ' '
+       echo -e "$mapentry" | sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | tr -s '^' ' '
      done;
    done | \
    sort -n -t : -k 2 | \
