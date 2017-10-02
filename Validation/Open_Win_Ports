@@ -1,0 +1,33 @@
+# Whitebox evaluation of a windows machine from an unauthenticated, external prospective.
+# Useful for when you need to validate the ports are only accessible to internal trusted networks & interfaces
+# This should be done in 2 phases. You can still use the same function and test both UP and DOWN firewall scenarios
+# This can validate if an application is localhost only, or if it is bound to an ethernet interface.
+# First step on the target Windows host:
+#   Run as a privledged user: 'netstat -anbp tcp'
+# Step two, copy the commands output and save to your local Linux filesystem
+# Run the ValidateWinNetstat function as shown
+## ValidateWinNetstat <your_netstat_output.file>
+#
+ValidateWinNetstat() { 
+ nmapports=`cat $2 | \
+   grep -i listen | \
+   tr -s " " | \
+   cut -d" " -f3 | \
+   cut -d ":" -f2 | \
+   sort -n | \
+   tr -s "\n" "," | \
+   sed -r s"/(.*)\,$/\1/g"`;
+ nmap -sCV -vvv -n -p \
+   `echo $nmapports` \
+   $1 | \
+   tee $1_nmap_ConVer_Whitebox.scan
+} ## ValidateWinNetstat ./somenetstatoutput.file
+# After the command has completed you should have a file which exist in the current working directory of the user
+# prior to launching. This file will now contain any services which nmap was able to solicite and make a full handshark
+# grabbed banners and attempted to identify unknow services. This can be used to validate the Operating Systems firewalls.
+# To do this, you need to run the ValidateWinNetstat against the host in 2 different sessions
+#  Session 1: Firewall condition UP
+#  Session 2: Firewall condition DOWN
+# After you have captured scans from both conditions you can now validate which ports are open and which are not.
+# Or just use the following function to do the diff and parse the results.
+
