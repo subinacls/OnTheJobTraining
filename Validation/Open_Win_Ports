@@ -46,17 +46,24 @@ ValidateWinNetstat() {
  }
  doNmapConVerScan
  mapWinServices() {
-   echo -e "\n[-] Producing the Service Mapping file ...\n" 
+   echo -e "\n[-] Producing the Service Mapping file ...\n"
+   echo -e "\tPROTO LISTENING_IP:PORT WIN_PROCESS - NMAP_PROCESS\n";
    winser=`echo $ip`_`echo $timestamp`_service.map
    for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
      nmapentry=`cat $nmapout | \
-       grep $x | \
+       grep -Ei "^$x\/tcp" | \
        grep -Ei "[0-9]\/tcp( ){1,8}open( ){1,8}" | \
-       tr -s " " | sed -r "s/((.*) [0-9]{1,3} (.*)$)/\3/g"`;
+       tr -s " " |\
+       sed -r "s/(.*) ttl [0-9]{1,3} (.*)/\2/g"`;
      for xser in $(cat $serlist | grep "\:$x " | tr -s " " "^"); do
        rawentry=`echo "$xser- $nmapentry"`
-       mapentry=`echo $rawentry | sed -r "s/(.*)\]\^\-\^(.*)/\1\^-\^\2\]/g"`
-       echo -e "$mapentry" | sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | tr -s '^' ' '
+       mapentry=`echo $rawentry | \
+         sed -r "s/(.*)\]\^\-\^(.*)/\^\^\^\^\^\1\^-\^\2\]/g" | \
+         sed -r "s/0\.0\.0\.0\:0//g" |\
+         sed -r "s/\^LISTENING\^//g"`
+       echo -e "\t$mapentry" | \
+         sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | \
+         tr -s '^' ' ';
      done;
    done | \
    sort -n -t : -k 2 | \
@@ -65,11 +72,10 @@ ValidateWinNetstat() {
  }
  mapWinServices
 } ## ValidateWinNetstat ./somenetstatoutput.file
-
-# After the command has completed you should have a file which exist in the current working directory of the user
-# prior to launching. This file will now contain any services which nmap was able to solicite and make a full handshark
-# grabbed banners and attempted to identify unknow services. This can be used to validate the Operating Systems firewalls.
-# To do this, you need to run the ValidateWinNetstat against the host in 2 different sessions
+# After the command has completed you should have files on disk which are dropped in the current working directory 
+# of the user prior to launching. This file will now contain any services which nmap was able to solicite and make 
+# a full handshark grabbed banners and attempted to identify unknow services. This can be used to validate the 
+# Operating Systems firewalls. To do this, you need to run the ValidateWinNetstat against the host in 2 different sessions
 #  Session 1: Firewall condition UP
 #  Session 2: Firewall condition DOWN
 # After you have captured scans from both conditions you can now validate which ports are open and which are not.
