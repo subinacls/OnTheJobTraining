@@ -8,19 +8,20 @@
 # Run the ValidateWinNetstat function as shown
 ## ValidateWinNetstat <your_netstat_output.file>
 #
-ValidateWinNetstat() { 
+ValidateWinNetstat() {
+ timestamp=`date | tr -s " " | cut -d " " -f2,4 | tr -s " " "_" | tr -s ":" "-"`
  nmapports=`cat $2 | \
    grep -i listen | \
    tr -s " " | \
    cut -d" " -f3 | \
    cut -d ":" -f2 | \
-   sort -n | \
+   sort -nu | \
    tr -s "\n" "," | \
    sed -r s"/(.*)\,$/\1/g"`;
  nmap -sCV -vvv -n -p \
    `echo $nmapports` \
    $1 | \
-   tee $1_nmap_ConVer_Whitebox.scan
+   tee $1_nmap_ConVer_Whitebox_$timestamp.scan
 } ## ValidateWinNetstat ./somenetstatoutput.file
 # After the command has completed you should have a file which exist in the current working directory of the user
 # prior to launching. This file will now contain any services which nmap was able to solicite and make a full handshark
@@ -31,3 +32,16 @@ ValidateWinNetstat() {
 # After you have captured scans from both conditions you can now validate which ports are open and which are not.
 # Or just use the following function to do the diff and parse the results.
 
+
+
+# Make a service to port number list for later validation
+makeServiceList() { 
+  cat $1 | \
+  tr -d "\n" | \
+  sed -r "s/TCP/\nTCP/g" | \
+  grep -i listening | \
+  tr -s " " | \
+  sed -r s"/Can not obtain ownership information/\[Unknown Process\]/g" | \
+  sed -r "s/LISTENING (.*) \[svchost.exe\]/LISTENING \[\1\ - [svchost.exe\]\]/g" | \
+  tee $1_service_list;
+}
