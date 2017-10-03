@@ -1,0 +1,250 @@
+makeTCP4ServiceList() { 
+ echo -e "\n[-] Producing IPv4 TCP Windows Service file ...\n"
+ sert4list="`echo $ipv4`_`echo $timestamp`_ipv4_tcp_service.list"
+ cat $netstatfile | \
+   grep TCP |\
+   grep -v "\[\:\:\]" | \
+   grep -v UDP | \
+   tr -d "\n" | \
+   sed -r "s/TCP/\nTCP/g" | \
+   grep -i listening | \
+   tr -s " " | \
+   sed -r s"/Can not obtain ownership information/\[?????\]/g" | \
+   sed -r "s/LISTENING (.*) \[svchost.exe\]/LISTENING \[\1 - [svchost.exe\]\]/g" | \
+   tee $sert4list;
+ echo -e "\n[-] Service file saved: $sert4list ...\n" 
+}
+makeTCP6ServiceList() { 
+ echo -e "\n[-] Producing IPv6 TCP Windows Service file ...\n"
+ sert6list="`echo $ipv6`_`echo $timestamp`ipv6_tcp_service.list"
+ cat $netstatfile | \
+   grep TCP |\
+   grep "\[\:\:\]" | \
+   grep -v UDP | \
+   tr -d "\n" | \
+   sed -r "s/TCP/\nTCP/g" | \
+   grep -i listening | \
+   tr -s " " | \
+   sed -r s"/Can not obtain ownership information/\[?????\]/g" | \
+   sed -r "s/LISTENING (.*) \[svchost.exe\]/LISTENING \[\1 - [svchost.exe\]\]/g" | \
+   tee $sert6list;
+ echo -e "\n[-] Service file saved: $sert6list ...\n" 
+}
+makeUDP4ServiceList() { 
+ echo -e "\n[-] Producing IPv4 UDP Windows Service file ...\n"
+ seru4list="`echo $ipv4`_`echo $timestamp`_ipv4_udp_service.list"
+ cat $netstatfile | \
+   grep UDP | \
+   grep -vE "\[(.*)\]" | \
+   grep -v TCP | \
+   tr -s " " | \
+   tee $seru4list;
+ echo -e "\n[-] Service file saved: $seru4list ...\n" 
+}
+makeUDP6ServiceList() { 
+ echo -e "\n[-] Producing IPv6 UDP Windows Service file ...\n"
+ seru6list="`echo $ipv6`_`echo $timestamp`_ipv6_udp_service.list"
+ cat $netstatfile | \
+   grep UDP | \
+   grep -E "\[(.*)\]" | \
+   grep -v TCP | \
+   tr -s " " | \
+   tee $seru6list;
+ echo -e "\n[-] Service file saved: $seru6list ...\n" 
+}
+doNmapv4TCPConVerScan() {
+ echo -e "\n[-] Staring Nmap IPv4 TCP Connect Version Scan ...\n"
+ nmapout=`echo $ipv4`_`echo $timestamp`_TCPv4_nmap.out
+ nmapports=`cat $netstatfile | \
+   grep -i listen | \
+   tr -s " " | \
+   cut -d" " -f3 | \
+   cut -d ":" -f2 | \
+   sort -nu | \
+   tr -s "\n" "," | \
+   sed -r s"/(.*)\,$/\1/g" | \
+   sed -r "s/\,(.*)/\1/g"`;
+ nmap -sCV -vvv -n -p \
+   $nmapports \
+   $ipv4 | \
+   tee $nmapout;
+ echo -e "\n[-] Nmap finished, output file saved: $nmapout ...\n" 
+}
+doNmapv6TCPConVerScan() {
+ echo -e "\n[-] Staring Nmap IPv4 TCP Connect Version Scan ...\n"
+ nmapout=`echo $ipv6`_`echo $timestamp`_TCPv6_nmap.out
+ nmapports=`cat $netstatfile | \
+   grep -i listen | \
+   tr -s " " | \
+   cut -d" " -f3 | \
+   cut -d ":" -f2 | \
+   sort -nu | \
+   tr -s "\n" "," | \
+   sed -r s"/(.*)\,$/\1/g" | \
+   sed -r "s/\,(.*)/\1/g"`;
+ nmap -sCV -6 -vvv -n -p \
+   $nmapports \
+   $ipv6 | \
+   tee $nmapout;
+ echo -e "\n[-] Nmap finished, output file saved: $nmapout ...\n" 
+}
+doNmapv4UDPConVerScan() {
+ echo -e "\n[-] Staring Nmap IPv4 UDP Connect Version Scan ...\n"
+ nmapout=`echo $ipv4`_`echo $timestamp`_UDPv4_nmap.out
+ nmapports=`cat $netstatfile | \
+   grep UDP | \
+   tr -s " " | \
+   grep -Ev "\[(.*)\]" | \
+   cut -d":" -f2 | \
+   cut -d " " -f1 | \
+   sort -nu | \
+   tr -s "\n" "," | \
+   sed -r s"/(.*)\,$/\1/g"`;
+ nmap -sCVU -vvv -n -p \
+   $nmapports \
+   $ipv4 | \
+   tee $nmapout;
+ echo -e "\n[-] Nmap finished, output file saved: $nmapout ...\n" 
+}
+doNmapv6UDPConVerScan() {
+ echo -e "\n[-] Staring Nmap IPv4 UDP Connect Version Scan ...\n"
+ nmapout=`echo $ipv6`_`echo $timestamp`_UDPv6_nmap.out
+ nmapports=`cat $netstatfile | \
+   grep UDP | \
+   tr -s " " | \
+   grep -E "\[(.*)\]" | \
+   sed -r "s/UDP \[(.*)\]:([0-9]{1,5}) (.*)/\2/g"| \
+   sort -nu | \
+   tr -s "\n" "," | \
+   sed -r s"/(.*)\,$/\1/g" | \
+   tr -d " "`;
+ nmap -sCVU -6 -vvv -n -p \
+   $nmapports \
+   $ipv6 | \
+   tee $nmapout;
+ echo -e "\n[-] Nmap finished, output file saved: $nmapout ...\n" 
+}
+mapWinTCPv4Services() {
+ echo -e "\n[-] Producing the Service Mapping file ...\n"
+ echo -e "\tPROTO LISTENING_IP:PORT WIN_PROCESS - NMAP_PROCESS\n";
+ winser=`echo $ipv4`_`echo $timestamp`_TCPv4_service.map
+ for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
+   nmapentry=`cat $nmapout | \
+     grep -Ei "^$x\/tcp" | \
+     grep -Ei "[0-9]\/tcp( ){1,8}open( ){1,8}" | \
+     tr -s " " |\
+     sed -r "s/(.*) ttl [0-9]{1,3} (.*)/\2/g"`;
+   for xser in $(cat $sert4list | grep "\:$x " | tr -s " " "^"); do
+     rawentry=`echo "$xser- $nmapentry"`
+     mapentry=`echo $rawentry | \
+       sed -r "s/(.*)\]\^\-\^(.*)/\^\^\^\^\^\1\^-\^\2\]/g" | \
+       sed -r "s/0\.0\.0\.0\:0//g" |\
+       sed -r "s/\^LISTENING\^//g"`
+     echo -e "\t$mapentry" | \
+       sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | \
+       tr -s '^' ' ';
+   done;
+ done | \
+ sort -n -t : -k 2 | \
+   tee $winser;
+ echo -e "\n[-] Service Mapping File saved: $winser ...\n" 
+}
+mapWinTCPv6Services() {
+ echo -e "\n[-] Producing the Service Mapping file ...\n"
+ echo -e "\tPROTO LISTENING_IP:PORT WIN_PROCESS - NMAP_PROCESS\n";
+ winser=`echo $ipv6`_`echo $timestamp`_service.map
+ for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
+   nmapentry=`cat $nmapout | \
+     grep -Ei "^$x\/tcp" | \
+     grep -Ei "[0-9]\/tcp( ){1,8}open( ){1,8}" | \
+     tr -s " " |\
+     sed -r "s/(.*) ttl [0-9]{1,3} (.*)/\2/g"`;
+   for xser in $(cat $sert6list | grep "\:$x " | tr -s " " "^"); do
+     rawentry=`echo "$xser- $nmapentry"`
+     mapentry=`echo $rawentry | \
+       sed -r "s/(.*)\]\^\-\^(.*)/\^\^\^\^\^\1\^-\^\2\]/g" | \
+       sed -r "s/0\.0\.0\.0\:0//g" |\
+       sed -r "s/\^LISTENING\^//g"`
+     echo -e "\t$mapentry" | \
+       sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | \
+       tr -s '^' ' ';
+   done;
+ done | \
+ sort -n -t : -k 2 | \
+   tee $winser;
+ echo -e "\n[-] Service Mapping File saved: $winser ...\n" 
+}
+mapWinUDPv4Services() {
+ echo -e "\n[-] Producing the Service Mapping file ...\n"
+ echo -e "\tPROTO LISTENING_IP:PORT WIN_PROCESS - NMAP_PROCESS\n";
+ winser=`echo $ipv4`_`echo $timestamp`_service.map
+ for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
+   nmapentry=`cat $nmapout | \
+     grep -Ei "^$x\/tcp" | \
+     grep -Ei "[0-9]\/tcp( ){1,8}open( ){1,8}" | \
+     tr -s " " |\
+     sed -r "s/(.*) ttl [0-9]{1,3} (.*)/\2/g"`;
+   for xser in $(cat $seru4list | grep "\:$x " | tr -s " " "^"); do
+     rawentry=`echo "$xser- $nmapentry"`
+     mapentry=`echo $rawentry | \
+       sed -r "s/(.*)\]\^\-\^(.*)/\^\^\^\^\^\1\^-\^\2\]/g" | \
+       sed -r "s/0\.0\.0\.0\:0//g" |\
+       sed -r "s/\^LISTENING\^//g"`
+     echo -e "\t$mapentry" | \
+       sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | \
+       tr -s '^' ' ';
+   done;
+ done | \
+ sort -n -t : -k 2 | \
+   tee $winser;
+ echo -e "\n[-] Service Mapping File saved: $winser ...\n" 
+}
+mapWinUDPv6Services() {
+ echo -e "\n[-] Producing the Service Mapping file ...\n"
+ echo -e "\tPROTO LISTENING_IP:PORT WIN_PROCESS - NMAP_PROCESS\n";
+ winser=`echo $ipv6`_`echo $timestamp`_service.map
+ for x in $(cat $nmapout | grep -i "discovered open port" | cut -d " " -f4 | cut -d"/" -f1 | sort -nu); do 
+   nmapentry=`cat $nmapout | \
+     grep -Ei "^$x\/tcp" | \
+     grep -Ei "[0-9]\/tcp( ){1,8}open( ){1,8}" | \
+     tr -s " " |\
+     sed -r "s/(.*) ttl [0-9]{1,3} (.*)/\2/g"`;
+   for xser in $(cat $seru6list | grep "\:$x " | tr -s " " "^"); do
+     rawentry=`echo "$xser- $nmapentry"`
+     mapentry=`echo $rawentry | \
+       sed -r "s/(.*)\]\^\-\^(.*)/\^\^\^\^\^\1\^-\^\2\]/g" | \
+       sed -r "s/0\.0\.0\.0\:0//g" |\
+       sed -r "s/\^LISTENING\^//g"`
+     echo -e "\t$mapentry" | \
+       sed -r "s/(.*)\?\?\?\?\?(.*)/\1Unknown Process\2/g" | \
+       tr -s '^' ' ';
+   done;
+ done | \
+ sort -n -t : -k 2 | \
+   tee $winser;
+ echo -e "\n[-] Service Mapping File saved: $winser ...\n" 
+}
+doFullIPv4TCP() {
+ echo -e "\n[-] Doing Full TCP IPv4 Scan on the target: $ipv4"
+ echo -e "\t[!] This will run in the background till completed ..."
+ fullt4="`echo $ipv4`_`echo $timestamp`_IPv4-TCP_allports_nmap.out"
+ (nmap -sCV -p- -n -vvv $ipv4 2>&1> $fullt4 &)
+}
+doFullIPv4UDP() {
+ echo -e "\n[-] Doing Full UDP IPv4 Scan on the target: $ipv4"
+ echo -e "\t[!] This will run in the background till completed ..."
+ fullu4="`echo $ipv4`_`echo $timestamp`_IPv4-UDP_allports_nmap.out"
+ (nmap -sCVU -p- -n -vvv $ipv4 2>&1> $fullu4 &)
+}
+doFullIPv6TCP() {
+ echo -e "\n[-] Doing Full TCP IPv6 Scan on the target: $ipv6"
+ echo -e "\t[!] This will run in the background till completed ..."
+ fullt6="`echo $ipv6`_`echo $timestamp`_IPv4-TCP_allports_nmap.out"
+ (nmap -sCV -p- -n -vvv $ipv6 2>&1> $fullt6 &)
+}
+doFullIPv6UDP() {
+ echo -e "\n[-] Doing Full UDP IPv6 Scan on the target: $ipv6"
+ echo -e "\t[!] This will run in the background till completed ..."
+ fullu6="`echo $ipv6`_`echo $timestamp`_IPv4-UDP_allports_nmap.out"
+ (nmap -sCVU -p- -n -vvv $ipv6 2>&1> $fullu6 &)
+}
