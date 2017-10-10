@@ -1,1 +1,28 @@
 
+#
+# Taking a port listing TCP from a windows machine
+# Copy and paste to linux machine, save file
+# run function w/ argument of files location
+# outputs a wireshark filter of all Listening ports
+# makes the filter tcp.dstport || tcp.srcport
+# seperates with logical or || and moves to next port
+# And here we go, KISS
+nstatTCP2shark() { 
+  a=`echo;open="(";
+  close=")";
+  echo -n $open;
+  for x in $(cat $1 \
+  | grep -i listen \
+  | tr -s  " " \
+  | cut -d":" -f2 \
+  | cut -d" " -f1 \
+  | sort -un); 
+  do 
+    echo -n "(tcp.srcport == $x || tcp.dstport == $x) || ";
+  done; 
+  echo -n $close ; 
+  echo;echo`;
+  echo $a \
+    | sed -r "s/(.*) \|\| \)/\1\)/g";
+}
+
