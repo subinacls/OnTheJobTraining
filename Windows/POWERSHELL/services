@@ -1,0 +1,49 @@
+# take wildcard name for service(S) and attempts to:
+#   shut the service down
+#   start the service up
+#   checked the failed services
+#     attempts to restart the service
+#
+function FuncCheckService{
+  get-service -Name $argv[0]
+ if ($_.Status -ne "Running"){
+  Start-Service 
+  Write-Host "Starting " $ServiceName " service" 
+  " ---------------------- " 
+  " Service is now started"
+ }
+ if ($arrService.Status -eq "running"){ 
+ Write-Host "$ServiceName service is already started"
+ }
+ }
+function kickStart{
+  get-service $args[0] | Foreach { 
+    if ($_.Status -ne "Running"){
+      start-service $_.name -passthru
+      Write-Host "Starting " $ServiceName " service" 
+      " ---------------------- " 
+      " Service is now started"
+    }
+    if ($_.Status -eq "Running"){
+      restart-service $_.name -passthru
+      Write-Host "Retarting " $_.name 
+      " ---------------------- " 
+      " Service is now started"
+    }
+  }
+}
+function startEM {
+  get-service -Name $args[0] | Foreach { 
+    start-service $_.name -passthru
+  }
+}
+function StopEM {
+  get-service -Name $args[0] | Foreach { 
+    stop-service $_.name -passthru
+  }
+}
+function RestartEM {
+  StopEM $args[0]
+  Start-Sleep -s 10
+  StartEM $args[0]
+}
