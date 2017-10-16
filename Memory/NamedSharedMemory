@@ -18,4 +18,4 @@ sharemem_dump() {
     sed -r "s/([0-9A-Fa-f]{2})/\\\\\x\1/g"`;
   echo -e $b |\
     xxd;
-} ## sharemem_dump """\x42\x42\x42\x42"""
+} ## sharemem_dump """42 42 42 42"""
