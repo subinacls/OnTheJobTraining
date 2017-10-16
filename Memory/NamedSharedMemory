@@ -1,0 +1,21 @@
+#
+# In specific situations the memory can be shared between processes through 
+# the facilitation of the operating syste CreateFileMapping WINAPI call
+# 
+# The opens named share and sends files / data across these mappings
+# for IPS and other application functionality / communications
+# 
+# Resembles TCP/IP but without framing of data structures rather it is a FIFO pipe
+#
+# The following represents a way to take raw hex dumps of these mappings
+# and present the output in Hexdump format for easy of manipulation
+#
+
+sharemem_dump() { 
+  a=$1; 
+  b=`echo -e $a |\
+    tr -d "\n " |\
+    sed -r "s/([0-9A-Fa-f]{2})/\\\\\x\1/g"`;
+  echo -e $b |\
+    xxd;
+} ## sharemem_dump """\x42\x42\x42\x42"""
