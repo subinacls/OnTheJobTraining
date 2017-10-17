@@ -19,3 +19,14 @@ sharemem_dump() {
   echo -e $b |\
     xxd;
 } ## sharemem_dump """42 42 42 42"""
+
+#
+# Strips \x00 null bytes from hexdump
+# prints only strings from hexdump
+string_me() { 
+  echo -e `echo $1 | \
+    sed -r "s/00//g" | \
+    tr -d "\t\n "| \
+    sed -r "s/([0-9a-fA-F]{2})/\\\\\x\1/g"` | \
+    strings;
+} ## string_me """42 42 42 42"""
