@@ -1,4 +1,4 @@
 search_pdftxt() { 
   find ./ -name '*.pdf' -exec sh -c 'pdftotext "{}" - | \
-    grep -iE --with-filename --label="{}" --color "$1"';
+    grep -iE --with-filename --label="{}" --color "$1"'\;
 }
