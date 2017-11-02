@@ -1,0 +1,8 @@
+# 
+# dont you hate when you read some miniver JS files in a web app ?
+# Just grab the section or the whole file and save it to disk
+# save the function below and call the filename as argument 1 
+# enjoy non eye bleeding reading
+
+ppretty() { a=`cat $1 |sed -r "s/\n/\\\\\n/g"`; echo -e $a;} ## ppretty ./somebad.js
+
