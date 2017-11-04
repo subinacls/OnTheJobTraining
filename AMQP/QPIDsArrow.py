@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Author: William 'no1special' Coppola (SubINaclS)
 # QPID Protocol Header Solicitor
 from scapy.all import *
 import os, sys
