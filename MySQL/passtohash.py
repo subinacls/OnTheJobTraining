@@ -36,7 +36,6 @@ except Exception as e:
  pass
 
 for i in d:
- #print hashlib.md5(x).hexdigest()
  with open(i, "r") as f:
   for x in f:
    x = x.strip()
