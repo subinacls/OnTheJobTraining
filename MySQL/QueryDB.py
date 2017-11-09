@@ -14,45 +14,46 @@ dbname=sa[1] # the db name
 project=sa[2] # the project name
 outfile=sa[3] # the outfile to disk
 
-def dbconnect():
- '''connect to the sql db'''
- db = MySQLdb.connect(host="localhost", user="root")
- cur = db.cursor()
-
-def dbteardown():
- '''close the sql connection'''
- cur.close()
-
-def dbcommit():
- '''commit the query'''
- db.commit()
-
-def selectdb():
- '''select the datastore to use for the query'''
- try:
-  createdb()
-  settable()
- except Exception as e:
+class conn():
+ def __init__(self):
   pass
- try:
-  cur.execute("use " + str(dbname))
- except Exception as e:
-  pass
+ def connup(self):
+  '''connect to the sql db'''
+  db = MySQLdb.connect(host="localhost", user="root")
+  cur = db.cursor()
+ def conndown(self):
+  '''close the sql connection'''
+  cur.close()
 
-def createdb():
+class dbaction():
+ def __init__(self):
+  pass
+ def selectdb(self):
+  '''select the datastore to use for the query'''
+  try:
+   cur.execute("use " + str(dbname))
+  except Exception as e:
+   pass
+ def docommit(self):
+  '''commit the query'''
+  db.commit()
+
+class createdb():
+ def __init__(self):
+  pass
+ def makedb(self):
  '''select the datastore to use for the query'''
  try:
   cur.execute("create database" + str(dbname) + ";")
  except Exception as e:
   pass
-
-def settable():
- '''create table for db'''
- try:
-  query=sqlquery().tables()
-  cur.execute(query)
- except Exception as e:
-  pass
+ def maketable(self):
+  '''create table for db'''
+  try:
+   query=sqlquery().tables()
+   cur.execute(query)
+  except Exception as e:
+   pass
 
 '''build the connection up'''
 dbconnect()
@@ -60,46 +61,44 @@ selectdb()
 
 '''Main functionality of the script'''
 
-def dumppwds():
- '''dumps the passwords from the given db and tablename to unique'''
- try:
-  query=sqlquery().pwddump()
-  cur.execute(query)
- except Exception as e:
+class makequery():
+ def __init__(self):
   pass
-
-def dumpusers():
- '''dumps the passwords from the given db and tablename to unique'''
- try:
-  query=sqlquery().userdump()
-  cur.execute(query)
- except Exception as e:
-  pass
-
-def dumpdomains():
- '''dumps the passwords from the given db and tablename to unique'''
- try:
-  query=sqlquery().domaindump()
-  cur.execute(query)
- except Exception as e:
-  pass
-
-def dumpemails():
- '''dumps the passwords from the given db and tablename to unique'''
- try:
-  query=sqlquery().emaildump()
-  cur.execute(query)
- except Exception as e:
-  pass
-
-def dumpall():
- '''dumps the passwords from the given db and tablename to unique'''
- try:
-  query=sqlquery().alldump()
-  cur.execute(query)
- except Exception as e:
-  pass
-'''
+ def dumppwds(self):
+  '''dumps the passwords from the given db and tablename to unique'''
+  try:
+   query=sqlquery().pwddump()
+   cur.execute(query)
+  except Exception as e:
+   pass
+ def dumpusers(self):
+  '''dumps the passwords from the given db and tablename to unique'''
+  try:
+   query=sqlquery().userdump()
+   cur.execute(query)
+  except Exception as e:
+   pass
+ def dumpdomains(self):
+  '''dumps the passwords from the given db and tablename to unique'''
+  try:
+   query=sqlquery().domaindump()
+   cur.execute(query)
+  except Exception as e:
+   pass
+ def dumpemails(self):
+  '''dumps the passwords from the given db and tablename to unique'''
+  try:
+   query=sqlquery().emaildump()
+   cur.execute(query)
+  except Exception as e:
+   pass
+ def dumpall(self):
+  '''dumps the passwords from the given db and tablename to unique'''
+  try:
+   query=sqlquery().alldump()
+   cur.execute(query)
+  except Exception as e:
+   pass
 def importfile():
  try:
   print("[?] Do you want to change the DB: %s (y/n) ?") % dbname
@@ -114,7 +113,6 @@ def importfile():
   cur.execute(query)
  except Exception as e:
   pass
-'''
 
 class sqlquery():
  def __init__(self):
@@ -211,6 +209,20 @@ class sqlquery():
     "PRIMARY KEY (id)" \
     ");"
   return query
+ def importfile(self):
+  try:
+   print("[?] Do you want to change the DB: %s (y/n) ?") % dbname
+   read changedb
+   if changedb.lower() == "y":
+    read dbname "\t[!] Enter the new dbname now:"
+    read project "\t[!] Enter the new project name now:"
+    selectdb()
+   print("[?] Enter a filename for importing: %s ?")
+   read infile "[!] Enter a filename for importing:"
+   query=sqlquery().fileup()
+   cur.execute(query)
+  except Exception as e:
+   pass
 
 # end user console interface
 def interface()
