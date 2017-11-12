@@ -1,0 +1,7 @@
+ls | parallel --pipe --files -j3 sort -u | parallel -j1 sort -um {} ";" rm {}
+
+#
+# (list all files in current directory) | \
+# parallel (pipe split to multi jobs) (tmp file to disk) (run as many jobs as the host allows) (sort unique) | \
+# parallel (run a single job) ( sort unique merge file streams) (filename) (comment the command continuation character) (remove tmp files)
+#
